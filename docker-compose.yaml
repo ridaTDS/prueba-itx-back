@@ -33,3 +33,12 @@ services:
       - K6_OUT=influxdb=http://influxdb:8086/k6
     extra_hosts:
       - "host.docker.internal:host-gateway"
+  # Aplicación (opcional: también se puede arrancar en local con `mvn spring-boot:run`)
+  similar-products:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - EXISTING_APIS_BASE_URL=http://simulado:80
+    depends_on:
+      - simulado
