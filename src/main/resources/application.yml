@@ -1,0 +1,33 @@
+server:
+  port: 5000
+
+spring:
+  application:
+    name: similar-products
+
+# APIs existentes (mocks de simulado en docker-compose)
+existing-apis:
+  base-url: ${EXISTING_APIS_BASE_URL:http://localhost:3001}
+  # Tiempo máximo para establecer la conexión TCP con el upstream
+  connect-timeout: 1s
+  # Tiempo máximo que se espera a una respuesta del upstream. Las peticiones
+  # siguen en curso aunque el cliente ya haya recibido respuesta, de forma que
+  # el resultado acaba en caché y las siguientes peticiones lo aprovechan.
+  upstream-timeout: 60s
+  # Tiempo máximo que una petición a nuestro API espera por los ids similares
+  similar-ids-timeout: 3s
+  # Tiempo máximo que una petición a nuestro API espera por el detalle de un producto.
+  # Si se supera, el producto se omite en esa respuesta (degradación controlada).
+  product-detail-timeout: 3s
+  max-connections: 500
+  pending-acquire-timeout: 5s
+  cache:
+    ttl: 10m
+    not-found-ttl: 1m
+    max-size: 10000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
