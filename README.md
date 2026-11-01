@@ -70,17 +70,57 @@ docker compose up -d --build simulado influxdb grafana keycloak similar-products
 La URL de las APIs existentes se configura con la variable `EXISTING_APIS_BASE_URL`
 (por defecto `http://localhost:3001`).
 
-### Tests
+## Tests
+
+Tres niveles, de más rápido a más completo:
+
+| Nivel | Comando | Qué necesita |
+|---|---|---|
+| Unitarios (`*Test`) | `mvn test` | Nada |
+| Integración (`*IT`) | `mvn verify` | Docker para `KeycloakSecurityIT` (si no hay Docker, ese test se omite) |
+| End-to-end (Karate) | `mvn -f e2e/karate/pom.xml test` | La aplicación, los mocks y Keycloak arrancados |
+
+`mvn verify` ejecuta unitarios e integración y genera la cobertura con JaCoCo en
+`target/site/jacoco/index.html` (unitarios) y `target/site/jacoco-it/index.html` (integración).
+
+### Unitarios
+
+| Clase | Qué cubre |
+|---|---|
+| `SimilarProductsServiceTest` | Orden de similitud con respuestas desordenadas, omisión de productos que no existen o fallan, duplicados, lista vacía y propagación de errores. |
+| `ExistingApisProductCatalogTest` | Cliente HTTP contra `MockWebServer`: ids numéricos, 404, 500, timeouts, caché, caché negativa, agrupación de peticiones concurrentes y rutas llamadas. |
+| `SimilarProductsControllerTest` | Slice WebFlux: contrato JSON, 404, 502 y 401 sin token. |
+| `RestExceptionHandlerTest` | Traducción de excepciones a `ProblemDetail` (404, 502). |
+| `ProductDetailJsonTest` | Serialización según el contrato y lectura tolerante del upstream. |
+| `ExistingApisPropertiesTest` | La configuración se valida al arrancar (fail fast). |
+
+### Integración
+
+| Clase | Qué cubre |
+|---|---|
+| `SimilarProductsIT` | Aplicación completa con un `MockWebServer` que reproduce `mocks.json`: casos normales, 404, 500, token válido, sin token, token inválido y health check. |
+| `KeycloakSecurityIT` | Aplicación completa con un **Keycloak real** (Testcontainers) que importa el mismo realm: token emitido por Keycloak aceptado, firma manipulada rechazada, sin token y credenciales de cliente incorrectas. |
+
+### End-to-end con Karate
+
+Proyecto independiente en [`e2e/karate`](./e2e/karate) que prueba el sistema desplegado
+(aplicación + simulado + Keycloak), igual que lo usaría un cliente real. Obtiene un token de
+Keycloak una sola vez y lo reutiliza.
 
 ```bash
-mvn test
+docker compose up -d simulado keycloak
+mvn spring-boot:run                     # en otra terminal
+mvn -f e2e/karate/pom.xml test
 ```
 
-- `SimilarProductsServiceTest`: orden de los resultados, omisión de productos que fallan, duplicados.
-- `ExistingApisProductCatalogTest`: cliente HTTP contra `MockWebServer` (404, 500, timeouts, caché).
-- `SimilarProductsControllerTest`: contrato JSON, códigos de estado y 401 sin token.
-- `SimilarProductsIntegrationTest`: extremo a extremo con los mismos casos que `mocks.json`,
-  token válido, sin token, token inválido y health check público.
+| Feature | Escenarios |
+|---|---|
+| `similar-products.feature` | Contrato y orden, omisión de productos 404/500, tiempo de respuesta con productos lentos y muy lentos, productos lentos servidos desde caché, 404 de producto inexistente. |
+| `security.feature` | Sin token, token inventado, firma manipulada, token válido, métodos no permitidos (403) y health check público. |
+
+El informe queda en `e2e/karate/target/karate-reports/karate-summary.html`. Las URLs y
+credenciales se pueden cambiar con `-DbaseUrl=...`, `-DkeycloakUrl=...`, `-DclientId=...` y
+`-DclientSecret=...`.
 
 ## Arquitectura
 
