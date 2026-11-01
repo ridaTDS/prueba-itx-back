@@ -46,6 +46,28 @@
             </testResource>
         </testResources>
         <plugins>
+            <!-- Karate 1.4 usa GraalJS 22, que sólo funciona hasta Java 21 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>require-java-17-to-21</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[17,22)</version>
+                                    <message>Los tests de Karate necesitan Java 17 o 21. Apunta JAVA_HOME a uno de esos JDK (mvn -v muestra cuál se está usando).</message>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- Versión explícita: la que trae Maven por defecto (3.1) no soporta <release> -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

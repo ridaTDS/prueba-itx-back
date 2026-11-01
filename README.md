@@ -118,6 +118,9 @@ mvn -f e2e/karate/pom.xml test
 | `similar-products.feature` | Contrato y orden, omisión de productos 404/500, tiempo de respuesta con productos lentos y muy lentos, productos lentos servidos desde caché, 404 de producto inexistente. |
 | `security.feature` | Sin token, token inventado, firma manipulada, token válido, métodos no permitidos (403) y health check público. |
 
+Karate 1.4 necesita **Java 17 o 21** (su motor JavaScript no funciona en versiones más nuevas);
+el build lo comprueba al empezar.
+
 Si tu Maven está configurado contra un repositorio corporativo (Artifactory, Nexus…) que no
 tiene Karate, fuerza Maven Central con los settings incluidos:
 
