@@ -118,6 +118,13 @@ mvn -f e2e/karate/pom.xml test
 | `similar-products.feature` | Contrato y orden, omisión de productos 404/500, tiempo de respuesta con productos lentos y muy lentos, productos lentos servidos desde caché, 404 de producto inexistente. |
 | `security.feature` | Sin token, token inventado, firma manipulada, token válido, métodos no permitidos (403) y health check público. |
 
+Si tu Maven está configurado contra un repositorio corporativo (Artifactory, Nexus…) que no
+tiene Karate, fuerza Maven Central con los settings incluidos:
+
+```bash
+mvn -s e2e/karate/central-settings.xml -gs e2e/karate/central-settings.xml -f e2e/karate/pom.xml test
+```
+
 El informe queda en `e2e/karate/target/karate-reports/karate-summary.html`. Las URLs y
 credenciales se pueden cambiar con `-DbaseUrl=...`, `-DkeycloakUrl=...`, `-DclientId=...` y
 `-DclientSecret=...`.

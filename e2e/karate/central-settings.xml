@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Settings mínimos para descargar las dependencias directamente de Maven Central,
+  ignorando mirrors corporativos (Artifactory/Nexus) que no tengan Karate.
+  Uso: mvn -s e2e/karate/central-settings.xml -gs e2e/karate/central-settings.xml -f e2e/karate/pom.xml test
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+</settings>

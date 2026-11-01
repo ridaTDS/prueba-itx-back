@@ -9,6 +9,9 @@
       Es un proyecto independiente para no mezclar sus dependencias con las de la aplicación.
 
       Ejecución:  mvn -f e2e/karate/pom.xml test
+
+      Si tu Maven usa un repositorio corporativo que no tiene Karate, usa Maven Central:
+                  mvn -s e2e/karate/central-settings.xml -gs e2e/karate/central-settings.xml -f e2e/karate/pom.xml test
     -->
     <groupId>com.itx</groupId>
     <artifactId>similar-products-e2e</artifactId>
@@ -19,6 +22,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <karate.version>1.4.1</karate.version>
+        <compiler.version>3.13.0</compiler.version>
         <surefire.version>3.2.5</surefire.version>
     </properties>
 
@@ -42,6 +46,12 @@
             </testResource>
         </testResources>
         <plugins>
+            <!-- Versión explícita: la que trae Maven por defecto (3.1) no soporta <release> -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler.version}</version>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
