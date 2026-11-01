@@ -2,6 +2,9 @@
 
 Solución a la prueba técnica de back-end ([enunciado original](./TEST_STATEMENT.md)).
 
+> 📄 **Guía paso a paso** para arrancar la aplicación y ejecutar todos los tests (back y front):
+> [`docs/GUIA-ARRANQUE-Y-PRUEBAS.pdf`](./docs/GUIA-ARRANQUE-Y-PRUEBAS.pdf)
+
 Aplicación Spring Boot que expone en el puerto **5000** la operación acordada en
 [`similarProducts.yaml`](./similarProducts.yaml):
 
