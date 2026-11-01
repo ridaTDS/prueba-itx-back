@@ -1,6 +1,10 @@
 package com.itx.similarproducts;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
 import java.io.IOException;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
@@ -8,12 +12,18 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.oauth2.jwt.BadJwtException;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 /**
  * Prueba de extremo a extremo con un servidor que reproduce los mocks de {@code shared/simulado/mocks.json}.
@@ -21,10 +31,28 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class SimilarProductsIntegrationTest {
 
+    private static final String VALID_TOKEN = "valid-token";
+
     private static MockWebServer existingApis;
 
     @Autowired
     private WebTestClient webTestClient;
+
+    // Sustituye la validación contra Keycloak: sólo "valid-token" es un JWT válido
+    @MockBean
+    private ReactiveJwtDecoder jwtDecoder;
+
+    @BeforeEach
+    void setUpJwtDecoder() {
+        when(jwtDecoder.decode(anyString())).thenReturn(Mono.error(new BadJwtException("Invalid token")));
+        Jwt jwt = Jwt.withTokenValue(VALID_TOKEN)
+                .header("alg", "RS256")
+                .subject("demo")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(300))
+                .build();
+        when(jwtDecoder.decode(VALID_TOKEN)).thenReturn(Mono.just(jwt));
+    }
 
     @BeforeAll
     static void startExistingApis() throws IOException {
@@ -63,6 +91,7 @@ class SimilarProductsIntegrationTest {
     @Test
     void returnsSimilarProductsInOrder() {
         webTestClient.get().uri("/product/1/similar")
+                .headers(headers -> headers.setBearerAuth(VALID_TOKEN))
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
@@ -75,6 +104,7 @@ class SimilarProductsIntegrationTest {
     @Test
     void omitsSimilarProductsThatAreNotFound() {
         webTestClient.get().uri("/product/4/similar")
+                .headers(headers -> headers.setBearerAuth(VALID_TOKEN))
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
@@ -86,6 +116,7 @@ class SimilarProductsIntegrationTest {
     @Test
     void omitsSimilarProductsThatFail() {
         webTestClient.get().uri("/product/5/similar")
+                .headers(headers -> headers.setBearerAuth(VALID_TOKEN))
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
@@ -95,8 +126,32 @@ class SimilarProductsIntegrationTest {
     @Test
     void returns404ForUnknownProduct() {
         webTestClient.get().uri("/product/999/similar")
+                .headers(headers -> headers.setBearerAuth(VALID_TOKEN))
                 .exchange()
                 .expectStatus().isNotFound();
+    }
+
+    @Test
+    void rejectsRequestsWithoutToken() {
+        webTestClient.get().uri("/product/1/similar")
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectHeader().exists("WWW-Authenticate");
+    }
+
+    @Test
+    void rejectsInvalidTokens() {
+        webTestClient.get().uri("/product/1/similar")
+                .headers(headers -> headers.setBearerAuth("forged-token"))
+                .exchange()
+                .expectStatus().isUnauthorized();
+    }
+
+    @Test
+    void healthCheckIsPublic() {
+        webTestClient.get().uri("/actuator/health")
+                .exchange()
+                .expectStatus().isOk();
     }
 
     private static MockResponse json(int status, String body) {

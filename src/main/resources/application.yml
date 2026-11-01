@@ -4,6 +4,14 @@ server:
 spring:
   application:
     name: similar-products
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Emisor esperado en el claim "iss" de los tokens
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/itx}
+          # Claves públicas para verificar la firma (en Docker apunta a http://keycloak:8080)
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/itx/protocol/openid-connect/certs}
 
 # APIs existentes (mocks de simulado en docker-compose)
 existing-apis:
