@@ -74,6 +74,56 @@ class ExistingApisProductCatalogTest {
     }
 
     @Test
+    void mapsSlowSimilarIdsToUpstreamUnavailable() {
+        server.enqueue(json(200, "[2,3,4]").setHeadersDelay(1, TimeUnit.SECONDS));
+
+        StepVerifier.create(catalog.getSimilarProductIds("1"))
+                .expectError(UpstreamUnavailableException.class)
+                .verify(Duration.ofSeconds(2));
+    }
+
+    @Test
+    void returnsEmptyListWhenThereAreNoSimilarIds() {
+        server.enqueue(json(200, "[]"));
+
+        StepVerifier.create(catalog.getSimilarProductIds("1"))
+                .expectNext(List.of())
+                .verifyComplete();
+    }
+
+    @Test
+    void cachesSimilarIds() {
+        server.enqueue(json(200, "[2,3,4]"));
+
+        StepVerifier.create(catalog.getSimilarProductIds("1")).expectNextCount(1).verifyComplete();
+        StepVerifier.create(catalog.getSimilarProductIds("1")).expectNextCount(1).verifyComplete();
+
+        assertThat(server.getRequestCount()).isEqualTo(1);
+    }
+
+    @Test
+    void callsTheExpectedUpstreamPaths() throws InterruptedException {
+        server.enqueue(json(200, "[2]"));
+        server.enqueue(json(200, "{\"id\":\"2\",\"name\":\"Dress\",\"price\":19.99,\"availability\":true}"));
+
+        StepVerifier.create(catalog.getSimilarProductIds("1")).expectNextCount(1).verifyComplete();
+        StepVerifier.create(catalog.getProductDetail("2")).expectNextCount(1).verifyComplete();
+
+        assertThat(server.takeRequest().getPath()).isEqualTo("/product/1/similarids");
+        assertThat(server.takeRequest().getPath()).isEqualTo("/product/2");
+    }
+
+    @Test
+    void cachesNotFoundProductDetails() {
+        server.enqueue(json(404, "{\"message\":\"Product not found\"}"));
+
+        StepVerifier.create(catalog.getProductDetail("5")).verifyComplete();
+        StepVerifier.create(catalog.getProductDetail("5")).verifyComplete();
+
+        assertThat(server.getRequestCount()).isEqualTo(1);
+    }
+
+    @Test
     void returnsProductDetail() {
         server.enqueue(json(200, "{\"id\":\"1\",\"name\":\"Shirt\",\"price\":9.99,\"availability\":true}"));
 

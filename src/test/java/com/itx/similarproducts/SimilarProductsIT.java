@@ -29,7 +29,7 @@ import reactor.core.publisher.Mono;
  * Prueba de extremo a extremo con un servidor que reproduce los mocks de {@code shared/simulado/mocks.json}.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class SimilarProductsIntegrationTest {
+class SimilarProductsIT {
 
     private static final String VALID_TOKEN = "valid-token";
 

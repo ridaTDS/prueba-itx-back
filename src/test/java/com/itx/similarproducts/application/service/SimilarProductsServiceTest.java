@@ -87,4 +87,25 @@ class SimilarProductsServiceTest {
                 .expectError(ProductNotFoundException.class)
                 .verify();
     }
+
+    @Test
+    void propagatesUpstreamErrorsWhenSimilarIdsCannotBeObtained() {
+        when(productCatalog.getSimilarProductIds("1"))
+                .thenReturn(Mono.error(new UpstreamUnavailableException("down", null)));
+
+        StepVerifier.create(service.getSimilarProducts("1"))
+                .expectError(UpstreamUnavailableException.class)
+                .verify();
+    }
+
+    @Test
+    void returnsEmptyListWhenNoSimilarProductCanBeResolved() {
+        when(productCatalog.getSimilarProductIds("3")).thenReturn(Mono.just(List.of("100", "1000")));
+        when(productCatalog.getProductDetail("100")).thenReturn(Mono.error(new RuntimeException("timeout")));
+        when(productCatalog.getProductDetail("1000")).thenReturn(Mono.empty());
+
+        StepVerifier.create(service.getSimilarProducts("3"))
+                .expectNext(List.of())
+                .verifyComplete();
+    }
 }

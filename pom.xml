@@ -20,6 +20,7 @@
     <properties>
         <java.version>17</java.version>
         <mockwebserver.version>4.12.0</mockwebserver.version>
+        <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
     <dependencies>
@@ -74,6 +75,12 @@
             <version>${mockwebserver.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- Keycloak real en Docker para los tests de integración de seguridad -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -89,6 +96,50 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+            <!-- Tests unitarios (*Test): mvn test -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <!-- Tests de integración (*IT): mvn verify -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <!-- Cobertura: target/site/jacoco (unitarios) y target/site/jacoco-it (integración) -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>prepare-agent-integration</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report-integration</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-integration</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
